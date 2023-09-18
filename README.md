@@ -1,4 +1,4 @@
-# control-tower-log-aggregator
+# Foundation-control-tower-log-aggregator
 
 <img src="https://github.com/PeterBengtson/control-tower-log-aggregator/blob/main/docs-images/logs.jpg?raw=true." align="right"/>SAM project to combine small daily log files into larger daily log files, 
 to make it possible to store them in Glacier without extra overhead, thereby
@@ -144,7 +144,7 @@ though a multipart upload is done for each component log file. S3 is a high-capa
 really can take a pounding - it's designed for this sort of thing.
 
 
-## Installation
+## Stand-Alone Installation
 
 Install in the Log Archive account, in your main region.
 
@@ -191,3 +191,9 @@ Next time you need to deploy or update the application, simply do a:
 sam build && sam deploy
 ```
 If you need to change the parameter overrides, you can do so by running `sam deploy --guided` again, or you can simply change the overrides in `samconfig.toml` and just build and deploy using the shorter form given above.
+
+
+## Installation as Part of Delegat Foundation
+
+It's the usual configuration in `Delegat-Install` and './deploy'.
+
