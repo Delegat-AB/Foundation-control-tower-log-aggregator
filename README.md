@@ -195,5 +195,5 @@ If you need to change the parameter overrides, you can do so by running `sam dep
 
 ## Installation as Part of Delegat Foundation
 
-It's the usual configuration in `Delegat-Install` and './deploy'.
+It's the usual configuration in `Delegat-Install` and then `./deploy`. Or just let Delegat-Install handle it using a `./deploy-all Foundation`.
 
