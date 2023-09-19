@@ -252,6 +252,13 @@ Resources:
     Type: AWS::Serverless::Function 
     Properties:
       CodeUri: functions/dynamic_setup/
+      Policies:
+        - Statement:
+            - Sid: S3Permissions
+              Effect: Allow
+              Action:
+                - s3:ListAllMyBuckets
+              Resource: '*'
 
 
   DetermineArchiveKeyFunction:

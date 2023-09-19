@@ -4,27 +4,7 @@ repo-name    = "Foundation-control-tower-log-aggregator"
 part-of      = 'foundation'
 
 
-[[pre-SAM-CloudFormation]]
-name         = "INFRA-foo-bar"
-template     = 'cloudformation/foo-bar.yaml'
-account      = '{admin-account}'
-regions      = '{main-region}'
-
-[[pre-SAM-CloudFormation]]
-name         = "INFRA-baz-role"
-template     = 'cloudformation/baz-role.yaml'
-account      = 'ALL'
-regions      = '{main-region}'
-capabilities = 'CAPABILITY_NAMED_IAM'
-
-[[pre-SAM-CloudFormation]]
-name         = "INFRA-quux"
-template     = 'cloudformation/quux.yaml'
-account      = 'ALL'
-regions      = '{all-regions}'
-
-
 [SAM]
 stack-name   = "INFRA-control-tower-log-aggregator"
-profile      = "admin-account"
-regions      = '{all-regions}'
+profile      = "log-archive-account"
+regions      = '{main-region}'
