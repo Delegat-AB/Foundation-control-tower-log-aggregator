@@ -911,7 +911,7 @@ def handle_stack_set(repo_name, stack_name, template_str, params, capabilities, 
             printc(GRAY, f"StackSet does not exist in {account} and {main_region}")
         create_stack_set(stack_name, template_str, stack_parameters, capabilities, root_ou, regions, account, main_region, cross_account_role, dry_run, verbose)
         monitor_stackset_until_complete(stack_name, account, main_region, cross_account_role, dry_run, verbose)
-        create_stack_set_instances(stack_name, template_str, stack_parameters, capabilities, root_ou, except_account, regions, account, region, cross_account_role, dry_run, verbose)
+        create_stack_set_instances(stack_name, template_str, stack_parameters, capabilities, root_ou, except_account, regions, account, main_region, cross_account_role, dry_run, verbose)
         monitor_stackset_stacks_until_complete(stack_name, account, main_region, cross_account_role, dry_run, verbose)
 
     if except_account == admin_account_id:
