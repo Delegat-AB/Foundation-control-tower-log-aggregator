@@ -382,7 +382,7 @@ def process_stack(action, resource_type, name, template_body, parameters, capabi
                     return False
                 else:
                     # Wait for the change set to be created
-                    printc(YELLOW, "Waiting for changeset to be created...")
+                    printc(LIGHT_BLUE, "Waiting for changeset to be created...")
                     waiter = cf_client.get_waiter('change_set_create_complete')
                     waiter.wait(
                         StackName=name,
@@ -435,18 +435,17 @@ def print_change_set(change_set):
         dash_len = max_resource_len + max_action_len + max_id_len + 36
 
         printc(YELLOW, "-" * dash_len)
+        printc(YELLOW, f"{'Action':<{max_action_len}}    {'LogicalResourceId':<{max_id_len}}    {'ResourceType':<{max_resource_len}}    Replacement")
+        printc(YELLOW, "-" * dash_len)
 
         # Print the changes in fixed-width columns
         for change in change_set['Changes']:
             resource = change['ResourceChange']['ResourceType']
             action = change['ResourceChange']['Action']
             logical_id = change['ResourceChange']['LogicalResourceId']
+            replacement = change.get('ResourceChange', {}).get('Replacement', '')
 
-            replacement = ''
-            if 'Replacement' in change['ResourceChange']:
-                replacement = f"{GRAY}Replacement: {YELLOW}{change['ResourceChange']['Replacement']}"
-
-            printc(YELLOW, f"{resource:<{max_resource_len}}    {logical_id:<{max_id_len}}    {action:<{max_action_len}}    {replacement}")
+            printc(GREEN, f"{action:<{max_action_len}}    {logical_id:<{max_id_len}}    {resource:<{max_resource_len}}    {replacement}")
 
         printc(YELLOW, "-" * dash_len)
         printc(YELLOW, '')
@@ -462,8 +461,12 @@ def print_template_resources(template_resources):
         # Calculate the maximum length of each column
         max_resource_len = max(len(resource[1]) for resource in template_resources)
         max_id_len = max(len(resource[0]) for resource in template_resources)
-        dash_len = max_resource_len + max_id_len + 14
+        dash_len = max_resource_len + max_id_len + 17
 
+        printc(YELLOW, "")
+        printc(LIGHT_BLUE, "Template Resources:")
+        printc(YELLOW, "-" * dash_len)
+        printc(YELLOW, f"Operation    {'LogicalResourceId':<{max_id_len}}    {'ResourceType':<{max_resource_len}}")
         printc(YELLOW, "-" * dash_len)
 
         # Print the resources in fixed-width columns
@@ -471,7 +474,7 @@ def print_template_resources(template_resources):
             logical_id = resource[0]
             resource_type = resource[1]
 
-            printc(YELLOW, f"{logical_id:<{max_id_len}}    {resource_type:<{max_resource_len}}    {GRAY}Create")
+            printc(GREEN, f"+ Add        {logical_id:<{max_id_len}}    {resource_type:<{max_resource_len}}")
 
         printc(YELLOW, "-" * dash_len)
         printc(YELLOW, '')
@@ -634,7 +637,7 @@ def monitor_stack_until_complete(stack_name, account_id, region, role, dry_run, 
     if stack_status in terminal_states:
         return
 
-    printc(YELLOW, "Waiting for stack or stack set to complete...")
+    printc(LIGHT_BLUE, "Waiting for stack or stack set to complete...")
     
     while True:
         try:
@@ -701,7 +704,7 @@ def monitor_stackset_until_complete(stackset_name, account_id, region, role, dry
     if stackset_status in terminal_states:
         return
 
-    printc(YELLOW, "Waiting for StackSet deployment to complete...")
+    printc(LIGHT_BLUE, "Waiting for StackSet deployment to complete...")
 
     while True:
         try:
@@ -769,7 +772,7 @@ def monitor_stackset_stacks_until_complete(stackset_name, account_id, region, ro
     if all(status in terminal_states for status in stack_statuses):
         return
 
-    printc(YELLOW, "Waiting for stack set's deployment of its stacks to complete...")
+    printc(LIGHT_BLUE, "Waiting for stack set's deployment of its stacks to complete...")
 
     while True:
         try:
