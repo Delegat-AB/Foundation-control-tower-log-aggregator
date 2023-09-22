@@ -1,0 +1,10 @@
+# Deployment configuration
+
+repo-name    = "Foundation-control-tower-log-aggregator"
+part-of      = 'foundation'
+
+
+[SAM]
+stack-name   = "INFRA-control-tower-log-aggregator"
+profile      = "log-archive-account"
+regions      = '{main-region}'
