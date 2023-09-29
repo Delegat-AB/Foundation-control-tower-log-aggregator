@@ -63,7 +63,7 @@ def load_toml(toml_file):
 
 
 def get_account_data_from_toml(account_key, id_or_profile):
-    toml_file = '../Delegat-Install/accounts.toml'
+    toml_file = '../Delegat-Install/apps/accounts.toml'
     # Load the TOML file
     config = load_toml(toml_file)
 
