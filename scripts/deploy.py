@@ -649,7 +649,8 @@ def update_stack_set(stack_set_name, template_body, parameters, capabilities, re
                          OperationPreferences={
                              'RegionConcurrencyType': 'PARALLEL',
                              'FailureTolerancePercentage': 0,
-                             'MaxConcurrentPercentage': 100
+                             'MaxConcurrentPercentage': 100,
+                             'ConcurrencyMode': 'SOFT_FAILURE_TOLERANCE'
                          })
 
 
@@ -687,7 +688,8 @@ def create_stack_set_instances(stack_set_name, template_body, parameters, capabi
         'OperationPreferences': {
             'RegionConcurrencyType': 'PARALLEL',
             'FailureTolerancePercentage': 0,
-            'MaxConcurrentPercentage': 100
+            'MaxConcurrentPercentage': 100,
+            'ConcurrencyMode': 'SOFT_FAILURE_TOLERANCE'
         }
     }
 
