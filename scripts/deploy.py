@@ -649,7 +649,8 @@ def update_stack_set(stack_set_name, template_body, parameters, capabilities, re
                          OperationPreferences={
                              'RegionConcurrencyType': 'PARALLEL',
                              'FailureTolerancePercentage': 0,
-                             'MaxConcurrentPercentage': 100
+                             'MaxConcurrentPercentage': 100,
+                             'ConcurrencyMode': 'SOFT_FAILURE_TOLERANCE'
                          })
 
 
@@ -659,11 +660,6 @@ def create_stack_set(stack_set_name, template_body, parameters, capabilities, ro
                          AutoDeployment={
                              'Enabled': True,
                              'RetainStacksOnAccountRemoval': False
-                         },
-                         OperationPreferences={
-                             'RegionConcurrencyType': 'PARALLEL',
-                             'FailureTolerancePercentage': 0,
-                             'MaxConcurrentPercentage': 100
                          })
 
 
@@ -676,23 +672,26 @@ def create_stack_set_instances(stack_set_name, template_body, parameters, capabi
     cf_client = get_client('cloudformation', account_id, region, role)
 
     # Initialize args
+    deployment_targets = {
+        'OrganizationalUnitIds':[root_ou]
+    }
+
+    # Filter away an account if except_account is present
+    if except_account:
+        deployment_targets['Accounts'] = [except_account]
+        deployment_targets['AccountFilterType'] = 'DIFFERENCE'
+
     args = {
         'StackSetName': stack_set_name,
-        'OrganizationalUnitIds': [root_ou],
+        'DeploymentTargets': deployment_targets,
         'Regions': deployment_regions,
         'OperationPreferences': {
             'RegionConcurrencyType': 'PARALLEL',
             'FailureTolerancePercentage': 0,
-            'MaxConcurrentPercentage': 100
+            'MaxConcurrentPercentage': 100,
+            'ConcurrencyMode': 'SOFT_FAILURE_TOLERANCE'
         }
     }
-
-    # Conditionally add DeploymentTargets if except_account is present
-    if except_account:
-        args['DeploymentTargets'] = {
-            'Accounts': [except_account],
-            'AccountFilterType': 'EXCLUDE'
-        }
 
     try:
         response = cf_client.create_stack_instances(**args)
