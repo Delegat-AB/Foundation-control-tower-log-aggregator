@@ -44,7 +44,7 @@ Parameters:
       If you are running any other version of Control Tower, leave this parameter
       blank. Instead, list the name of your Control Tower S3 access log bucket
       in the OtherBuckets parameter which will set it up to be parsed correctly.
-    Default: 'aws-controltower-s3-access-logs-111122223333-xx-xxxxx-1' 
+    Default: '' 
 
   OtherBuckets:
     Type: String

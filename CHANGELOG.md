@@ -1,5 +1,8 @@
 # Change Log
 
+## v1.0.3
+    * Corrected bug to select no buckets when the prefix list is empty.
+
 ## v1.0.2
     * Refreshed deployment scripts.
 
