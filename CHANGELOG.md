@@ -1,5 +1,8 @@
 # Change Log
 
+## v1.0.5
+    * Specified boto3 version 1.33.12.
+
 ## v1.0.4
     * Added final slash to prefix string now required to work as a prefix.
 
