@@ -1,5 +1,8 @@
 # Change Log
 
+## v1.0.6
+    * Fixed the 1B bug when aggregation regions are specified.
+
 ## v1.0.5
     * Specified boto3 version 1.33.12.
 
