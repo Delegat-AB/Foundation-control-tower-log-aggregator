@@ -6,7 +6,9 @@ FIVE_MB = 5 * 1024 * 1024
 
 TMP_LOGS_BUCKET_NAME = os.environ['TMP_LOGS_BUCKET_NAME']
 DEST_LOGS_BUCKET_NAME = os.environ['DEST_LOGS_BUCKET_NAME']
-AGGREGATION_REGIONS = os.environ['AGGREGATION_REGIONS'].split(',')
+
+AGGREGATION_REGIONS = os.environ.get('AGGREGATION_REGIONS', "[]")
+AGGREGATION_REGIONS = json.loads(AGGREGATION_REGIONS.replace("'", '"'))
 
 # Create the 5MB file at lambda startup time
 filler_file_path = f'/tmp/five_mb_file'
@@ -25,13 +27,20 @@ def lambda_handler(data, _context):
     log_files = get_files(data['files'])
     main_log_type = data.get('log_type')   # This is only true for a main log file
 
+    # print(f"Main log type: {main_log_type}")
+    # print(f"Final key: {final_key}")
+
     if not log_files:
         print("No files specified")
         return
+    
+    # print(f"Log files: {log_files}")
 
     # As multipart uploads require that all files but the last one be >= 5MB, we need to 
     # upload a file of this size to the scratchpad temp bucket as a starting point. The 
     # key used is the same as that of the final merged file.
+    # print("Uploading 5 MB accumulation file...")
+
     with open(filler_file_path, 'rb') as f:
         s3_client.upload_fileobj(f, TMP_LOGS_BUCKET_NAME, final_key)
 
@@ -39,10 +48,14 @@ def lambda_handler(data, _context):
     # aggregate.
     for log_file in log_files:
 
+        # print(f"Processing {log_file}...")
+
         if not aggregatable(log_file, main_log_type):
+            # print("  - not aggregatable")
             continue
 
         # Initiate the multipart upload
+        # print("Initiating multipart upload...")
         mpu = s3_client.create_multipart_upload(Bucket=TMP_LOGS_BUCKET_NAME, Key=final_key)
             
         part_responses = []
@@ -64,11 +77,12 @@ def lambda_handler(data, _context):
             part_responses.append(
                 {
                     'ETag': copy_response['CopyPartResult']['ETag'], 
-                    'PartNumber':part_number
+                    'PartNumber': part_number
                 }
             )
 
         # Finish the multipart upload for this log file to the temp bucket.
+        # print("Finishing multipart upload...")
         s3_client.complete_multipart_upload(
             Bucket=TMP_LOGS_BUCKET_NAME,
             Key=final_key,
@@ -79,15 +93,18 @@ def lambda_handler(data, _context):
     # All log files have now been added to the dummy file in the temp bucket.
     # Get the size of the result (which includes the +5MB dummy bytes)
     total_bytes = s3_resource.Object(TMP_LOGS_BUCKET_NAME, final_key).content_length
+    #print(f"Total bytes: {total_bytes}")
 
     # Initiate the final move of the result from the temp bucket to the chosen destination 
     # bucket, and also store the result using the Standard Infrequent Access storage class.
+    #print("Initiating final move multipart upload...")
     mpu = s3_client.create_multipart_upload(
         Bucket=dest_bucket_name, 
         Key=final_key,
         StorageClass='STANDARD_IA'
     )            
     # All we need here is a single part consisting of everything except the filler bytes.
+    #print("Uploading final move part copy...")
     response = s3_client.upload_part_copy(
         Bucket=dest_bucket_name,
         CopySource={'Bucket': TMP_LOGS_BUCKET_NAME, 'Key': final_key},
@@ -97,6 +114,7 @@ def lambda_handler(data, _context):
         CopySourceRange=f'bytes={FIVE_MB}-{total_bytes-1}'
     )
     # Do the upload
+    #print("Completing the final move multipart upload...")
     s3_client.complete_multipart_upload(
         Bucket=dest_bucket_name,
         Key=final_key,
@@ -111,6 +129,10 @@ def lambda_handler(data, _context):
         UploadId=mpu['UploadId']
     )
     # The final result is now in place in the destination bucket.
+    # final_total_bytes = s3_resource.Object(dest_bucket_name, final_key).content_length
+    # print(f"Final total bytes: {final_total_bytes}")
+    # if (final_total_bytes == 1):
+    #     print("ONE BYTE FILE RESULT")
 
     # Delete the versionless merged version from the temp bucket
     s3_client.delete_object(

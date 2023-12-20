@@ -90,10 +90,10 @@ Parameters:
 
   AggregationRegions:
     Type: String
-    Description: If given, a comma separated list of regions to aggregate main log files for; main 
+    Description: If given, a JSON list of regions to aggregate main log files for; main 
       log files from other regions (presumably blocked and inactive) will be deleted. If left blank, 
       all regions will be aggregated.
-    Default: ''
+    Default: '[]'
 
   
 Conditions:
