@@ -1,5 +1,8 @@
 # Change Log
 
+## v1.0.7
+    * The filler file is now exactly 5MB in size and sparse.
+
 ## v1.0.6
     * Fixed the 1B bug when aggregation regions are specified.
 
