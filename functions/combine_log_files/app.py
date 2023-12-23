@@ -28,18 +28,20 @@ def lambda_handler(data, _context):
     main_log_type = data.get('log_type')   # This is only true for a main log file
 
     # print(f"Main log type: {main_log_type}")
-    # print(f"Final key: {final_key}")
 
     if not log_files:
         print("No files specified")
         return
     
-    # print(f"Log files: {log_files}")
+    if not main_log_type:
+        print(f"Additional log to Final key: {final_key}")
+        print(f"Log files: {log_files}")
 
     # As multipart uploads require that all files but the last one be >= 5MB, we need to 
     # upload a file of this size to the scratchpad temp bucket as a starting point. The 
     # key used is the same as that of the final merged file.
-    # print("Uploading 5 MB accumulation file...")
+    if not main_log_type:
+        print("Uploading 5 MB accumulation file...")
 
     with open(filler_file_path, 'rb') as f:
         s3_client.upload_fileobj(f, TMP_LOGS_BUCKET_NAME, final_key)
@@ -48,14 +50,16 @@ def lambda_handler(data, _context):
     # aggregate.
     for log_file in log_files:
 
-        # print(f"Processing {log_file}...")
+        if not main_log_type:
+            print(f"Processing {log_file}...")
 
         if not aggregatable(log_file, main_log_type):
             # print("  - not aggregatable")
             continue
 
         # Initiate the multipart upload
-        # print("Initiating multipart upload...")
+        if not main_log_type:
+            print("Initiating multipart upload...")
         mpu = s3_client.create_multipart_upload(Bucket=TMP_LOGS_BUCKET_NAME, Key=final_key)
             
         part_responses = []
@@ -82,7 +86,8 @@ def lambda_handler(data, _context):
             )
 
         # Finish the multipart upload for this log file to the temp bucket.
-        # print("Finishing multipart upload...")
+        if not main_log_type:
+            print("Finishing multipart upload...")
         s3_client.complete_multipart_upload(
             Bucket=TMP_LOGS_BUCKET_NAME,
             Key=final_key,
@@ -97,14 +102,16 @@ def lambda_handler(data, _context):
 
     # Initiate the final move of the result from the temp bucket to the chosen destination 
     # bucket, and also store the result using the Standard Infrequent Access storage class.
-    #print("Initiating final move multipart upload...")
+    if not main_log_type:
+        print("Initiating final move multipart upload...")
     mpu = s3_client.create_multipart_upload(
         Bucket=dest_bucket_name, 
         Key=final_key,
         StorageClass='STANDARD_IA'
     )            
     # All we need here is a single part consisting of everything except the filler bytes.
-    #print("Uploading final move part copy...")
+    if not main_log_type:
+        print("Uploading final move part copy...")
     response = s3_client.upload_part_copy(
         Bucket=dest_bucket_name,
         CopySource={'Bucket': TMP_LOGS_BUCKET_NAME, 'Key': final_key},
@@ -114,7 +121,8 @@ def lambda_handler(data, _context):
         CopySourceRange=f'bytes={FIVE_MB}-{total_bytes-1}'
     )
     # Do the upload
-    #print("Completing the final move multipart upload...")
+    if not main_log_type:
+        print("Completing the final move multipart upload...")
     s3_client.complete_multipart_upload(
         Bucket=dest_bucket_name,
         Key=final_key,
@@ -131,6 +139,8 @@ def lambda_handler(data, _context):
     # The final result is now in place in the destination bucket.
 
     # Delete the versionless merged version from the temp bucket
+    if not main_log_type:
+        print("Deleting temp bucket file...")
     s3_client.delete_object(
         Bucket=TMP_LOGS_BUCKET_NAME,
         Key=final_key,
