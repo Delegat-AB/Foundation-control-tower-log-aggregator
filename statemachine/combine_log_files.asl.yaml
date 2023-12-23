@@ -131,10 +131,11 @@ States:
                                         BackoffRate: 5
                                 Next: Combine Main Log Files
 
+
                             Combine Main Log Files:
                                 Type: Task
                                 Resource: '${CombineLogFilesFunctionArn}'
-                                ResultPath: null
+                                ResultPath: $.combineMainLogsResult
                                 Retry:
                                     -
                                         ErrorEquals:
@@ -148,7 +149,16 @@ States:
                                         IntervalSeconds: 1
                                         MaxAttempts: 100
                                         BackoffRate: 5
-                                Next: Delete Main Log Originals
+                                Next: Check If More Files To Combine
+
+                            Check If More Files To Combine:
+                                Type: Choice
+                                Choices:
+                                    - Variable: $.combineMainLogsResult.continuationMarker
+                                      IsPresent: true
+                                      Next: Combine Main Log Files
+                                Default: Delete Main Log Originals
+
 
                             Delete Main Log Originals:
                                 Type: Task
@@ -221,10 +231,11 @@ States:
                             BackoffRate: 5
                     Next: Combine Log Files
 
+
                 Combine Log Files:
                     Type: Task
                     Resource: '${CombineLogFilesFunctionArn}'
-                    ResultPath: null
+                    ResultPath: $.combineMainLogsResult
                     Retry:
                         -
                             ErrorEquals:
@@ -238,7 +249,16 @@ States:
                             IntervalSeconds: 1
                             MaxAttempts: 100
                             BackoffRate: 5
-                    Next: Delete Originals
+                    Next: Check If More
+
+                Check If More:
+                    Type: Choice
+                    Choices:
+                        - Variable: $.combineMainLogsResult.continuationMarker
+                          IsPresent: true
+                          Next: Combine Log Files
+                    Default: Delete Originals
+
 
                 Delete Originals:
                     Type: Task
