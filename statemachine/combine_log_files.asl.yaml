@@ -28,243 +28,234 @@ States:
                 IntervalSeconds: 1
                 MaxAttempts: 100
                 BackoffRate: 5
-        Next: Process All Logs
+        Next: Process Main Log Types
 
-    Process All Logs:
-        Type: Parallel
-        Branches:
-            -
-                StartAt: Process Main Log Types
-                States:
-                    Process Main Log Types:
-                        Type: Map
-                        ItemsPath: $.ct_log_types
-                        MaxConcurrency: 0
-                        Parameters:
-                            bucket_name.$: $.bucket_name
-                            date.$: $.date
-                            log_type.$: $$.Map.Item.Value
-                        ResultPath: null
-                        Iterator:
-                            StartAt: Get Control Tower Account IDs
-                            States:
-                                Get Control Tower Account IDs:
-                                    Type: Task
-                                    Resource: '${GetControlTowerAccountIDsFunctionArn}'
-                                    ResultPath: $.account_prefixes
-                                    Retry:
-                                        -
-                                            ErrorEquals:
-                                                - States.Timeout
-                                                - Lambda.ServiceException
-                                                - Lambda.AWSLambdaException
-                                                - Lambda.SdkClientException
-                                        -
-                                            ErrorEquals:
-                                                - Lambda.TooManyRequestsException
-                                            IntervalSeconds: 1
-                                            MaxAttempts: 100
-                                            BackoffRate: 5
-                                    Next: Process Accounts
-                                    
-                                Process Accounts:
-                                    Type: Map
-                                    ItemsPath: $.account_prefixes
-                                    MaxConcurrency: 10  # The number of accounts processed at a time
-                                    Parameters:
-                                        bucket_name.$: $.bucket_name
-                                        log_type.$: $.log_type
-                                        date.$: $.date
-                                        account_prefix.$: $$.Map.Item.Value
-                                    ResultPath: null
-                                    Iterator:
-                                        StartAt: Get Used Regions
-                                        States:
-                                            Get Used Regions:
-                                                Type: Task
-                                                Resource: '${GetRegionsFunctionArn}'
-                                                ResultPath: $.region_prefixes
-                                                Retry:
-                                                    -
-                                                        ErrorEquals:
-                                                            - States.Timeout
-                                                            - Lambda.ServiceException
-                                                            - Lambda.AWSLambdaException
-                                                            - Lambda.SdkClientException
-                                                    -
-                                                        ErrorEquals:
-                                                            - Lambda.TooManyRequestsException
-                                                        IntervalSeconds: 1
-                                                        MaxAttempts: 100
-                                                        BackoffRate: 5
-                                                Next: Get Main Log Files
+    Process Main Log Types:
+        Type: Map
+        ItemsPath: $.ct_log_types
+        MaxConcurrency: 0
+        Parameters:
+            bucket_name.$: $.bucket_name
+            date.$: $.date
+            log_type.$: $$.Map.Item.Value
+        ResultPath: null
+        Iterator:
+            StartAt: Get Control Tower Account IDs
+            States:
+                Get Control Tower Account IDs:
+                    Type: Task
+                    Resource: '${GetControlTowerAccountIDsFunctionArn}'
+                    ResultPath: $.account_prefixes
+                    Retry:
+                        -
+                            ErrorEquals:
+                                - States.Timeout
+                                - Lambda.ServiceException
+                                - Lambda.AWSLambdaException
+                                - Lambda.SdkClientException
+                        -
+                            ErrorEquals:
+                                - Lambda.TooManyRequestsException
+                            IntervalSeconds: 1
+                            MaxAttempts: 100
+                            BackoffRate: 5
+                    Next: Process Accounts
+                    
+                Process Accounts:
+                    Type: Map
+                    ItemsPath: $.account_prefixes
+                    MaxConcurrency: 10  # The number of accounts processed at a time
+                    Parameters:
+                        bucket_name.$: $.bucket_name
+                        log_type.$: $.log_type
+                        date.$: $.date
+                        account_prefix.$: $$.Map.Item.Value
+                    ResultPath: null
+                    Iterator:
+                        StartAt: Get Used Regions
+                        States:
+                            Get Used Regions:
+                                Type: Task
+                                Resource: '${GetRegionsFunctionArn}'
+                                ResultPath: $.region_prefixes
+                                Retry:
+                                    -
+                                        ErrorEquals:
+                                            - States.Timeout
+                                            - Lambda.ServiceException
+                                            - Lambda.AWSLambdaException
+                                            - Lambda.SdkClientException
+                                    -
+                                        ErrorEquals:
+                                            - Lambda.TooManyRequestsException
+                                        IntervalSeconds: 1
+                                        MaxAttempts: 100
+                                        BackoffRate: 5
+                                Next: Get Main Log Files
 
-                                            Get Main Log Files:
-                                                Type: Task
-                                                Resource: '${GetExactFilesFunctionArn}'
-                                                ResultPath: $.files
-                                                Retry:
-                                                    -
-                                                        ErrorEquals:
-                                                            - States.Timeout
-                                                            - Lambda.ServiceException
-                                                            - Lambda.AWSLambdaException
-                                                            - Lambda.SdkClientException
-                                                    -
-                                                        ErrorEquals:
-                                                            - Lambda.TooManyRequestsException
-                                                        IntervalSeconds: 1
-                                                        MaxAttempts: 100
-                                                        BackoffRate: 5
-                                                Next: Determine Main Log Archive Key
+                            Get Main Log Files:
+                                Type: Task
+                                Resource: '${GetExactFilesFunctionArn}'
+                                ResultPath: $.files
+                                Retry:
+                                    -
+                                        ErrorEquals:
+                                            - States.Timeout
+                                            - Lambda.ServiceException
+                                            - Lambda.AWSLambdaException
+                                            - Lambda.SdkClientException
+                                    -
+                                        ErrorEquals:
+                                            - Lambda.TooManyRequestsException
+                                        IntervalSeconds: 1
+                                        MaxAttempts: 100
+                                        BackoffRate: 5
+                                Next: Determine Main Log Archive Key
 
-                                            Determine Main Log Archive Key:
-                                                Type: Task
-                                                Resource: '${DetermineArchiveKeyFunctionArn}'
-                                                ResultPath: $.key
-                                                Retry:
-                                                    -
-                                                        ErrorEquals:
-                                                            - States.Timeout
-                                                            - Lambda.ServiceException
-                                                            - Lambda.AWSLambdaException
-                                                            - Lambda.SdkClientException
-                                                    -
-                                                        ErrorEquals:
-                                                            - Lambda.TooManyRequestsException
-                                                        IntervalSeconds: 1
-                                                        MaxAttempts: 100
-                                                        BackoffRate: 5
-                                                Next: Combine Main Log Files
+                            Determine Main Log Archive Key:
+                                Type: Task
+                                Resource: '${DetermineArchiveKeyFunctionArn}'
+                                ResultPath: $.key
+                                Retry:
+                                    -
+                                        ErrorEquals:
+                                            - States.Timeout
+                                            - Lambda.ServiceException
+                                            - Lambda.AWSLambdaException
+                                            - Lambda.SdkClientException
+                                    -
+                                        ErrorEquals:
+                                            - Lambda.TooManyRequestsException
+                                        IntervalSeconds: 1
+                                        MaxAttempts: 100
+                                        BackoffRate: 5
+                                Next: Combine Main Log Files
 
-                                            Combine Main Log Files:
-                                                Type: Task
-                                                Resource: '${CombineLogFilesFunctionArn}'
-                                                ResultPath: null
-                                                Retry:
-                                                    -
-                                                        ErrorEquals:
-                                                            - States.Timeout
-                                                            - Lambda.ServiceException
-                                                            - Lambda.AWSLambdaException
-                                                            - Lambda.SdkClientException
-                                                    -
-                                                        ErrorEquals:
-                                                            - Lambda.TooManyRequestsException
-                                                        IntervalSeconds: 1
-                                                        MaxAttempts: 100
-                                                        BackoffRate: 5
-                                                Next: Delete Main Log Originals
+                            Combine Main Log Files:
+                                Type: Task
+                                Resource: '${CombineLogFilesFunctionArn}'
+                                ResultPath: null
+                                Retry:
+                                    -
+                                        ErrorEquals:
+                                            - States.Timeout
+                                            - Lambda.ServiceException
+                                            - Lambda.AWSLambdaException
+                                            - Lambda.SdkClientException
+                                    -
+                                        ErrorEquals:
+                                            - Lambda.TooManyRequestsException
+                                        IntervalSeconds: 1
+                                        MaxAttempts: 100
+                                        BackoffRate: 5
+                                Next: Delete Main Log Originals
 
-                                            Delete Main Log Originals:
-                                                Type: Task
-                                                Resource: '${DeleteOriginalsFunctionArn}'
-                                                ResultPath: null
-                                                Retry:
-                                                    -
-                                                        ErrorEquals:
-                                                            - States.Timeout
-                                                            - Lambda.ServiceException
-                                                            - Lambda.AWSLambdaException
-                                                            - Lambda.SdkClientException
-                                                    -
-                                                        ErrorEquals:
-                                                            - Lambda.TooManyRequestsException
-                                                        IntervalSeconds: 1
-                                                        MaxAttempts: 100
-                                                        BackoffRate: 5
-                                                End: true
-                                    End: true
-                        End: true
+                            Delete Main Log Originals:
+                                Type: Task
+                                Resource: '${DeleteOriginalsFunctionArn}'
+                                ResultPath: null
+                                Retry:
+                                    -
+                                        ErrorEquals:
+                                            - States.Timeout
+                                            - Lambda.ServiceException
+                                            - Lambda.AWSLambdaException
+                                            - Lambda.SdkClientException
+                                    -
+                                        ErrorEquals:
+                                            - Lambda.TooManyRequestsException
+                                        IntervalSeconds: 1
+                                        MaxAttempts: 100
+                                        BackoffRate: 5
+                                End: true
+                    End: true
+        Next: Process Other Logs
 
-            - 
-                StartAt: Process Other Logs
-                States:
-                    Process Other Logs:
-                        Type: Map
-                        ItemsPath: $.bucket_names
-                        MaxConcurrency: 10
-                        Parameters:
-                            bucket_name.$: $$.Map.Item.Value
-                            date.$: $.date
-                        ResultPath: null
-                        Iterator:
-                            StartAt: Get Other Log Files
-                            States:
-                                Get Other Log Files:
-                                    Type: Task
-                                    Resource: '${GetFilesFunctionArn}'
-                                    ResultPath: $.files
-                                    Retry:
-                                        -
-                                            ErrorEquals:
-                                                - States.Timeout
-                                                - Lambda.ServiceException
-                                                - Lambda.AWSLambdaException
-                                                - Lambda.SdkClientException
-                                        -
-                                            ErrorEquals:
-                                                - Lambda.TooManyRequestsException
-                                            IntervalSeconds: 1
-                                            MaxAttempts: 100
-                                            BackoffRate: 5
-                                    Next: Determine Archive Key
 
-                                Determine Archive Key:
-                                    Type: Task
-                                    Resource: '${DetermineArchiveKeyFunctionArn}'
-                                    ResultPath: $.key
-                                    Retry:
-                                        -
-                                            ErrorEquals:
-                                                - States.Timeout
-                                                - Lambda.ServiceException
-                                                - Lambda.AWSLambdaException
-                                                - Lambda.SdkClientException
-                                        -
-                                            ErrorEquals:
-                                                - Lambda.TooManyRequestsException
-                                            IntervalSeconds: 1
-                                            MaxAttempts: 100
-                                            BackoffRate: 5
-                                    Next: Combine Log Files
+    Process Other Logs:
+        Type: Map
+        ItemsPath: $.bucket_names
+        MaxConcurrency: 10
+        Parameters:
+            bucket_name.$: $$.Map.Item.Value
+            date.$: $.date
+        ResultPath: null
+        Iterator:
+            StartAt: Get Other Log Files
+            States:
+                Get Other Log Files:
+                    Type: Task
+                    Resource: '${GetFilesFunctionArn}'
+                    ResultPath: $.files
+                    Retry:
+                        -
+                            ErrorEquals:
+                                - States.Timeout
+                                - Lambda.ServiceException
+                                - Lambda.AWSLambdaException
+                                - Lambda.SdkClientException
+                        -
+                            ErrorEquals:
+                                - Lambda.TooManyRequestsException
+                            IntervalSeconds: 1
+                            MaxAttempts: 100
+                            BackoffRate: 5
+                    Next: Determine Archive Key
 
-                                Combine Log Files:
-                                    Type: Task
-                                    Resource: '${CombineLogFilesFunctionArn}'
-                                    ResultPath: null
-                                    Retry:
-                                        -
-                                            ErrorEquals:
-                                                - States.Timeout
-                                                - Lambda.ServiceException
-                                                - Lambda.AWSLambdaException
-                                                - Lambda.SdkClientException
-                                        -
-                                            ErrorEquals:
-                                                - Lambda.TooManyRequestsException
-                                            IntervalSeconds: 1
-                                            MaxAttempts: 100
-                                            BackoffRate: 5
-                                    Next: Delete Originals
+                Determine Archive Key:
+                    Type: Task
+                    Resource: '${DetermineArchiveKeyFunctionArn}'
+                    ResultPath: $.key
+                    Retry:
+                        -
+                            ErrorEquals:
+                                - States.Timeout
+                                - Lambda.ServiceException
+                                - Lambda.AWSLambdaException
+                                - Lambda.SdkClientException
+                        -
+                            ErrorEquals:
+                                - Lambda.TooManyRequestsException
+                            IntervalSeconds: 1
+                            MaxAttempts: 100
+                            BackoffRate: 5
+                    Next: Combine Log Files
 
-                                Delete Originals:
-                                    Type: Task
-                                    Resource: '${DeleteOriginalsFunctionArn}'
-                                    ResultPath: null
-                                    Retry:
-                                        -
-                                            ErrorEquals:
-                                                - States.Timeout
-                                                - Lambda.ServiceException
-                                                - Lambda.AWSLambdaException
-                                                - Lambda.SdkClientException
-                                        -
-                                            ErrorEquals:
-                                                - Lambda.TooManyRequestsException
-                                            IntervalSeconds: 1
-                                            MaxAttempts: 100
-                                            BackoffRate: 5
-                                    End: true
-                        End: true
+                Combine Log Files:
+                    Type: Task
+                    Resource: '${CombineLogFilesFunctionArn}'
+                    ResultPath: null
+                    Retry:
+                        -
+                            ErrorEquals:
+                                - States.Timeout
+                                - Lambda.ServiceException
+                                - Lambda.AWSLambdaException
+                                - Lambda.SdkClientException
+                        -
+                            ErrorEquals:
+                                - Lambda.TooManyRequestsException
+                            IntervalSeconds: 1
+                            MaxAttempts: 100
+                            BackoffRate: 5
+                    Next: Delete Originals
+
+                Delete Originals:
+                    Type: Task
+                    Resource: '${DeleteOriginalsFunctionArn}'
+                    ResultPath: null
+                    Retry:
+                        -
+                            ErrorEquals:
+                                - States.Timeout
+                                - Lambda.ServiceException
+                                - Lambda.AWSLambdaException
+                                - Lambda.SdkClientException
+                        -
+                            ErrorEquals:
+                                - Lambda.TooManyRequestsException
+                            IntervalSeconds: 1
+                            MaxAttempts: 100
+                            BackoffRate: 5
+                    End: true
         End: true
