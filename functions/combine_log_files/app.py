@@ -72,7 +72,7 @@ def lambda_handler(data, context):
             continue
 
         if not main_log_type or continuation_marker != 0:
-            logger.info(f"Aggregating...")
+            logger.info(f"Aggregating index {index}: {log_file}...")
 
         # Start timing the aggregation for this file
         file_start_time = time.time()
@@ -114,7 +114,7 @@ def lambda_handler(data, context):
         # Calculate and print the time taken to aggregate this file
         file_elapsed_time = time.time() - file_start_time
         if not main_log_type or continuation_marker != 0:
-            logger.info(f"Time taken to aggregate file {log_file} into {final_key}: {file_elapsed_time} seconds")
+            logger.info(f"Time elapsed: {file_elapsed_time} seconds")
 
 
     # All log files have now been added to the dummy file in the temp bucket.
