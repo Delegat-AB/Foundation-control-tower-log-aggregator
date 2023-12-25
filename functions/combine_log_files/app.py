@@ -46,10 +46,10 @@ def lambda_handler(data, context):
     start_time = time.time()
     remaining_time = context.get_remaining_time_in_millis() / 1000.0  # Convert to seconds
 
-    if not main_log_type or continuation_marker != 0:
-        logger.info(f"Final key: {final_key}")
-        logger.info(f"Number of aggregate files: {len(log_files)}")
-        logger.info(f"Continuation marker: {continuation_marker}")
+    # if not main_log_type or continuation_marker != 0:
+    #     logger.info(f"Final key: {final_key}")
+    #     logger.info(f"Number of aggregate files: {len(log_files)}")
+    #     logger.info(f"Continuation marker: {continuation_marker}")
 
     # As multipart uploads require that all files but the last one be >= 5MB, we need to 
     # upload a file of this size to the scratchpad temp bucket as a starting point. The 
@@ -62,8 +62,8 @@ def lambda_handler(data, context):
     # aggregate.
     # Resume or start the aggregation process
     for index, log_file in enumerate(log_files[continuation_marker:], start=continuation_marker):
-        if continuation_marker != 0:
-            logger.info(f"Index: {index}, Log file: {log_file}")
+        # if continuation_marker != 0:
+        #     logger.info(f"Index: {index}, Log file: {log_file}")
 
         # Check if there is enough time left to process another file
         elapsed_time = time.time() - start_time
@@ -74,11 +74,11 @@ def lambda_handler(data, context):
         if not aggregatable(log_file, main_log_type):
             continue
 
-        if not main_log_type or continuation_marker != 0:
-            logger.info(f"Aggregating index {index}: {log_file}...")
+        # if not main_log_type or continuation_marker != 0:
+        #     logger.info(f"Aggregating index {index}: {log_file}...")
 
         # Start timing the aggregation for this file
-        file_start_time = time.time()
+        # file_start_time = time.time()
 
         # Initiate the multipart upload
         mpu = s3_client.create_multipart_upload(Bucket=TMP_LOGS_BUCKET_NAME, Key=final_key)
@@ -115,9 +115,9 @@ def lambda_handler(data, context):
         )
 
         # Calculate and print the time taken to aggregate this file
-        file_elapsed_time = time.time() - file_start_time
-        if not main_log_type or continuation_marker != 0:
-            logger.info(f"Time elapsed: {file_elapsed_time} seconds")
+        # file_elapsed_time = time.time() - file_start_time
+        # if not main_log_type or continuation_marker != 0:
+        #     logger.info(f"Time elapsed: {file_elapsed_time} seconds")
 
 
     # All log files have now been added to the dummy file in the temp bucket.

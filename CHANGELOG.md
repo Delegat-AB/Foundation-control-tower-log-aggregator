@@ -1,5 +1,8 @@
 # Change Log
 
+## v1.1.1
+    * Fixed continuation bug: now the aggregation can handle any number and any size of log files.
+
 ## v1.1.0
     * Updated the state machine graphic for the new flow.
 
