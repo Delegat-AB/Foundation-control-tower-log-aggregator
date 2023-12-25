@@ -2,6 +2,11 @@ import boto3
 import os
 import json
 import time
+import logging
+
+# Configure the logger
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 
 FIVE_MB = 5 * 1024 * 1024
@@ -32,16 +37,16 @@ def lambda_handler(data, context):
     continuation_marker = data.get('continuationMarker', 0)  # Default to 0 if not provided
 
     if not log_files:
-        print("No files specified")
+        logger.info("No files specified")
         return {'status': 'no-op'}
     
     start_time = time.time()
     remaining_time = context.get_remaining_time_in_millis() / 1000.0  # Convert to seconds
 
     if not main_log_type or continuation_marker != 0:
-        print(f"Final key: {final_key}")
-        print(f"Number of aggregate files: {len(log_files)}")
-        print(f"Continuation marker: {continuation_marker}")
+        logger.info(f"Final key: {final_key}")
+        logger.info(f"Number of aggregate files: {len(log_files)}")
+        logger.info(f"Continuation marker: {continuation_marker}")
 
     # As multipart uploads require that all files but the last one be >= 5MB, we need to 
     # upload a file of this size to the scratchpad temp bucket as a starting point. The 
@@ -55,19 +60,19 @@ def lambda_handler(data, context):
     # Resume or start the aggregation process
     for index, log_file in enumerate(log_files[continuation_marker:], start=continuation_marker):
         if continuation_marker != 0:
-            print(f"Index: {index}, Log file: {log_file}")
+            logger.info(f"Index: {index}, Log file: {log_file}")
 
         # Check if there is enough time left to process another file
         elapsed_time = time.time() - start_time
         if (remaining_time - elapsed_time) < 120:  # Less than 2 minutes left
-            print(f"Lambda might time out, returning continuationMarker for next invocation: {index}")
+            logger.info(f"Lambda might time out, returning continuationMarker for next invocation: {index}")
             return {'continuationMarker': index}  # Return the index of the next file to process
 
         if not aggregatable(log_file, main_log_type):
             continue
 
         if not main_log_type or continuation_marker != 0:
-            print(f"Aggregating...")
+            logger.info(f"Aggregating...")
 
         # Start timing the aggregation for this file
         file_start_time = time.time()
@@ -106,10 +111,10 @@ def lambda_handler(data, context):
             UploadId=mpu['UploadId']
         )
 
-    # Calculate and print the time taken to aggregate this file
-    file_elapsed_time = time.time() - file_start_time
-    if not main_log_type or continuation_marker != 0:
-        print(f"Time taken to aggregate file {log_file}: {file_elapsed_time} seconds")
+        # Calculate and print the time taken to aggregate this file
+        file_elapsed_time = time.time() - file_start_time
+        if not main_log_type or continuation_marker != 0:
+            logger.info(f"Time taken to aggregate file {log_file} into {final_key}: {file_elapsed_time} seconds")
 
 
     # All log files have now been added to the dummy file in the temp bucket.
@@ -154,6 +159,7 @@ def lambda_handler(data, context):
         Key=final_key,
     )
 
+    # Return status
     return {'status': 'done'}
 
 
