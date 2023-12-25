@@ -34,7 +34,10 @@ def lambda_handler(data, context):
     final_key = data['key']
     log_files = get_files(data['files'])
     main_log_type = data.get('log_type')   # This is only true for a main log file
-    continuation_marker = data.get('continuationMarker', 0)  # Default to 0 if not provided
+
+    # Access continuationMarker from the nested combineMainLogsResult if it exists
+    combine_main_logs_result = data.get('combineMainLogsResult', {})
+    continuation_marker = combine_main_logs_result.get('continuationMarker', 0)
 
     if not log_files:
         logger.info("No files specified")
