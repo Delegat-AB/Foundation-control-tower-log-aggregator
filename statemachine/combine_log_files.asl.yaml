@@ -210,7 +210,37 @@ States:
                             IntervalSeconds: 1
                             MaxAttempts: 100
                             BackoffRate: 5
-                    Next: Determine Archive Key
+                    Next: Determine Operation Type
+
+
+                Determine Operation Type:
+                    Type: Task
+                    Resource: '${DetermineOperationTypeFunctionArn}'
+                    ResultPath: $.operation_type
+                    Retry:
+                        -
+                            ErrorEquals:
+                                - States.Timeout
+                                - Lambda.ServiceException
+                                - Lambda.AWSLambdaException
+                                - Lambda.SdkClientException
+                        -
+                            ErrorEquals:
+                                - Lambda.TooManyRequestsException
+                            IntervalSeconds: 1
+                            MaxAttempts: 100
+                            BackoffRate: 5
+                    Next: Decide What To Do
+
+
+                Decide What To Do:
+                    Type: Choice
+                    Choices:
+                        - Variable: $.operation_type
+                          StringEquals: "none"
+                          Next: Bucket Done
+                    Default: Determine Archive Key
+                    
 
                 Determine Archive Key:
                     Type: Task
@@ -277,5 +307,11 @@ States:
                             IntervalSeconds: 1
                             MaxAttempts: 100
                             BackoffRate: 5
-                    End: true
+                    Next: Bucket Done
+
+
+                Bucket Done:
+                    Type: Succeed
+
+
         End: true

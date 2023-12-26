@@ -179,6 +179,7 @@ Resources:
         GetControlTowerAccountIDsFunctionArn: !GetAtt GetControlTowerAccountIDsFunction.Arn
         GetRegionsFunctionArn: !GetAtt GetRegionsFunction.Arn
         GetExactFilesFunctionArn: !GetAtt GetExactFilesFunction.Arn
+        DetermineOperationTypeFunctionArn: !GetAtt DetermineOperationTypeFunction.Arn
         ControlTowerBucketName: !Ref ControlTowerBucket
         OtherBucketNames: !Ref OtherBuckets
       Events:
@@ -205,6 +206,9 @@ Resources:
             FunctionName: !Ref GetRegionsFunction
         - LambdaInvokePolicy:
             FunctionName: !Ref GetExactFilesFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref DetermineOperationTypeFunction
+            
 
   CombineLogFilesFunction:
     Type: AWS::Serverless::Function 
@@ -418,6 +422,27 @@ Resources:
       Environment:
         Variables:
           BUCKET_NAME: !Ref ControlTowerBucketAccessLogBucket
+
+
+  DetermineOperationTypeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/determine_operation_type/
+      Policies:
+        - Statement:
+            - Sid: S3Permissions
+              Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:GetObjectVersion
+                - s3:HeadBucket
+                - s3:HeadObject
+                - s3:ListBucket
+              Resource: '*'
+      Environment:
+        Variables:
+          TMP_LOGS_BUCKET_NAME: !Ref TmpLogsBucket
+          MIN_SIZE: !Ref GlacierObjectSize
 
 
   # Alarm
