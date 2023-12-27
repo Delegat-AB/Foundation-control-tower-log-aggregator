@@ -239,9 +239,48 @@ States:
                         - Variable: $.operation_type
                           StringEquals: "none"
                           Next: Bucket Done
-                    Default: Determine Archive Key
-                    
+                        - Variable: $.operation_type
+                          StringEquals: "copy_all"
+                          Next: Copy All
+                    Default: Aggregate All
 
+
+                Copy All:
+                    Type: Pass
+                    Next: Copy Log Files
+
+                Copy Log Files:
+                    Type: Task
+                    Resource: '${CopyLogFilesFunctionArn}'
+                    ResultPath: $.combineMainLogsResult
+                    Retry:
+                        -
+                            ErrorEquals:
+                                - States.Timeout
+                                - Lambda.ServiceException
+                                - Lambda.AWSLambdaException
+                                - Lambda.SdkClientException
+                        -
+                            ErrorEquals:
+                                - Lambda.TooManyRequestsException
+                            IntervalSeconds: 1
+                            MaxAttempts: 100
+                            BackoffRate: 5
+                    Next: Check If More To Copy
+
+                Check If More To Copy:
+                    Type: Choice
+                    Choices:
+                        - Variable: $.combineMainLogsResult.continuationMarker
+                          IsPresent: true
+                          Next: Copy Log Files
+                    Default: Delete Originals
+
+
+                Aggregate All:
+                    Type: Pass
+                    Next: Determine Archive Key
+                    
                 Determine Archive Key:
                     Type: Task
                     Resource: '${DetermineArchiveKeyFunctionArn}'
@@ -279,9 +318,9 @@ States:
                             IntervalSeconds: 1
                             MaxAttempts: 100
                             BackoffRate: 5
-                    Next: Check If More
+                    Next: Check If More To Combine
 
-                Check If More:
+                Check If More To Combine:
                     Type: Choice
                     Choices:
                         - Variable: $.combineMainLogsResult.continuationMarker

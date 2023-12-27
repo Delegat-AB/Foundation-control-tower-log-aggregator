@@ -180,6 +180,8 @@ Resources:
         GetRegionsFunctionArn: !GetAtt GetRegionsFunction.Arn
         GetExactFilesFunctionArn: !GetAtt GetExactFilesFunction.Arn
         DetermineOperationTypeFunctionArn: !GetAtt DetermineOperationTypeFunction.Arn
+        CopyLogFilesFunctionArn: !GetAtt CopyLogFilesFunction.Arn
+
         ControlTowerBucketName: !Ref ControlTowerBucket
         OtherBucketNames: !Ref OtherBuckets
       Events:
@@ -208,7 +210,9 @@ Resources:
             FunctionName: !Ref GetExactFilesFunction
         - LambdaInvokePolicy:
             FunctionName: !Ref DetermineOperationTypeFunction
-            
+        - LambdaInvokePolicy:
+            FunctionName: !Ref CopyLogFilesFunction
+
 
   CombineLogFilesFunction:
     Type: AWS::Serverless::Function 
@@ -443,6 +447,27 @@ Resources:
         Variables:
           TMP_LOGS_BUCKET_NAME: !Ref TmpLogsBucket
           MIN_SIZE: !Ref GlacierObjectSize
+
+
+  CopyLogFilesFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: functions/copy_log_files/
+      Policies:
+        - Statement:
+            - 
+              Sid: S3CopyPermissions
+              Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:ListBucket
+                - s3:PutObject
+                - s3:CopyObject
+              Resource: '*'
+      Environment:
+        Variables:
+          TMP_LOGS_BUCKET_NAME: !Ref TmpLogsBucket
+          DEST_LOGS_BUCKET_NAME: !If [UseCommonDestinationBucket, !Ref CommonDestinationBucket, '']
 
 
   # Alarm
