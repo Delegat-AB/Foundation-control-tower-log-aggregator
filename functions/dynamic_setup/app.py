@@ -22,19 +22,21 @@ def lambda_handler(data, _context):
 
     data['bucket_names'] = result
 
-    explicit_date = data.get('date')
-    if not explicit_date:
+    explicit_date = data.get('execution_input', {}).get('date')
+    if explicit_date:
+        data['date'] = explicit_date
+    else:
         today = date.today()
         yesterday = today - timedelta(days=1)
         data['date'] = str(yesterday)
-
+        
     # If we have specified an overriding input bucket name, use that bucket instead of the standard
     # Control Tower log bucket. This means we probably also have an explicit date and that we are
     # processing historical data, so the auxiliary log bucket processing will be skipped by setting
     # 'bucket_names' to the empty list.
-    overriding_bucket_name = data.get('overriding_bucket_name')
+    overriding_bucket_name = data.get('execution_input', {}).get('overriding_bucket_name')
     if overriding_bucket_name:
         data['bucket_name'] = overriding_bucket_name
-        data['bucket_names'] = []
+        data['bucket_names'] = []        
 
     return data

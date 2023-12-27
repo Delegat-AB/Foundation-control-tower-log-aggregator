@@ -10,6 +10,7 @@ States:
                 - CloudTrail-Digest
                 - Config
             bucket_names: '${OtherBucketNames}'
+            execution_input.$: '$'
         Next: Dynamic Setup
 
     Dynamic Setup:
