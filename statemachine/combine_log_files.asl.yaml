@@ -65,7 +65,7 @@ States:
                 Process Accounts:
                     Type: Map
                     ItemsPath: $.account_prefixes
-                    MaxConcurrency: 10  # The number of accounts processed at a time
+                    MaxConcurrency: 0  # The number of accounts processed at a time
                     Parameters:
                         bucket_name.$: $.bucket_name
                         log_type.$: $.log_type
