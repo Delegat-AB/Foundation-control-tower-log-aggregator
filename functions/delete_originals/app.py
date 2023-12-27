@@ -15,6 +15,9 @@ def lambda_handler(data, _context):
     if not files:
         print("No files to delete.")
         return
+    
+    n_files = len(files)
+    print(f"’{n_files} to delete...")
 
     bucket = s3_resource.Bucket(bucket_name)
     [version.delete() for version in bucket.object_versions.all() if version.object_key in files]
