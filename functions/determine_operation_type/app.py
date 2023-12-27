@@ -4,13 +4,14 @@ import re
 import boto3
 
 TMP_LOGS_BUCKET_NAME = os.environ['TMP_LOGS_BUCKET_NAME']
-MIN_SIZE = os.environ['MIN_SIZE']
+MIN_SIZE = int(os.environ['MIN_SIZE'])
 
 s3_client = boto3.client('s3')
 
 
 def lambda_handler(data, _context):
     # Get the files.
+    bucket_name = data['bucket_name']
     files = get_files(data['files'])
 
     # Check for an empty file list
@@ -18,7 +19,7 @@ def lambda_handler(data, _context):
         return "none"
 
     # Check file sizes.
-    if all_files_large(files):
+    if all_files_large(bucket_name, files):
         return "copy_all"
 
     # Check for AWS account ID pattern in all filenames.
@@ -33,13 +34,13 @@ def lambda_handler(data, _context):
     return "aggregate_all"
 
 
-def all_files_large(files):
+def all_files_large(bucket_name, files):
     for file in files:
         # Get file size from S3
-        response = s3_client.head_object(Bucket=TMP_LOGS_BUCKET_NAME, Key=file)
+        response = s3_client.head_object(Bucket=bucket_name, Key=file)
         size = response['ContentLength']
 
-        if size <= MIN_SIZE:
+        if size < MIN_SIZE:
             return False
     return True
 
