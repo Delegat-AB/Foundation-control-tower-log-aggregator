@@ -34,7 +34,7 @@ def lambda_handler(data, _context):
     # Control Tower log bucket. This means we probably also have an explicit date and that we are
     # processing historical data, so the auxiliary log bucket processing will be skipped by setting
     # 'bucket_names' to the empty list.
-    overriding_bucket_name = data.get('execution_input', {}).get('overriding_bucket_name')
+    overriding_bucket_name = data.get('execution_input', {}).get('bucket_name')
     if overriding_bucket_name:
         data['bucket_name'] = overriding_bucket_name
         data['bucket_names'] = []        
