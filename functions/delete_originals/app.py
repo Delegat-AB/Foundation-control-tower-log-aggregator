@@ -14,7 +14,7 @@ def lambda_handler(data, _context):
     files = get_files(data['files'])
 
     if not files:
-        print("No files to delete.")
+        print("No files to delete. Returning.")
         return
 
     n_files = len(files)
@@ -33,18 +33,28 @@ def lambda_handler(data, _context):
         except ClientError as e:
             print(f"An error occurred: {e}")
             return
+        
+    print(f"{len(objects_to_delete)} objects to delete...")
 
     # Delete objects in batches
     try:
+        total_deleted = 0
         for i in range(0, len(objects_to_delete), 1000):  # S3 delete_objects API allows up to 1000 keys at once
-            response = s3_client.delete_objects(
-                Bucket=bucket_name,
-                Delete={
-                    'Objects': objects_to_delete[i:i+1000],
-                    'Quiet': True
-                }
-            )
-            print(f"Deleted {len(response.get('Deleted', []))} items.")
+            batch = objects_to_delete[i:i+1000]
+            if batch:  # Ensure there are objects to delete
+                response = s3_client.delete_objects(
+                    Bucket=bucket_name,
+                    Delete={
+                        'Objects': batch,
+                        'Quiet': False  # Set Quiet to False to get the list of deleted objects
+                    }
+                )
+                deleted_items = response.get('Deleted', [])
+                errors = response.get('Errors', [])
+                total_deleted += len(deleted_items)
+                print(f"Deleted {len(deleted_items)} items.")
+                if errors:
+                    print(f"Errors encountered: {errors}")
     except ClientError as e:
         print(f"An error occurred during deletion: {e}")
 
