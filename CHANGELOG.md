@@ -1,5 +1,8 @@
 # Change Log
 
+## v1.2.1
+    * Documented the new features in the README.
+
 ## v1.2.0
     * Auxiliary log file copy strategy used when all log files are > 200K.
     * Bulk deletes now used to speed up deletion of log file originals.
