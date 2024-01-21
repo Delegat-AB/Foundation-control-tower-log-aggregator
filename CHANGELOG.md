@@ -1,5 +1,8 @@
 # Change Log
 
+## v1.3.0
+    * Dashboard added.
+
 ## v1.2.1
     * Documented the new features in the README.
 
