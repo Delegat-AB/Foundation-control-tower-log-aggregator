@@ -1,5 +1,8 @@
 # Change Log
 
+## v1.3.1
+    * Included the Control Tower bucket size on the dashboard.
+
 ## v1.3.0
     * Dashboard added.
 

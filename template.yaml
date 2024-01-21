@@ -615,6 +615,7 @@ Resources:
               Resource: '*'
       Environment:
         Variables:
+          CONTROL_TOWER_BUCKET: !Ref ControlTowerBucket
           DASHBOARD_NAME: !Ref DashboardName
           BUCKET_PREFIXES: !Ref OtherBuckets
           REGION: !Sub "${AWS::Region}"

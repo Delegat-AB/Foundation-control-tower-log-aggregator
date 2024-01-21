@@ -7,6 +7,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
+CONTROL_TOWER_BUCKET = os.environ['CONTROL_TOWER_BUCKET']
 BUCKET_PREFIXES = os.environ['BUCKET_PREFIXES']
 DASHBOARD_NAME = os.environ['DASHBOARD_NAME']
 REGION = os.environ['REGION']
@@ -260,13 +261,13 @@ def compute_body_variable(bucket_list, body_variable, first_variable, rest_varia
     if len(bucket_list) == 0:
         return ''
         
-    replacement = first_variable.replace('<BUCKET_NAME>', bucket_list[0])
+    replacement = first_variable.replace('<BUCKET_NAME>', CONTROL_TOWER_BUCKET)
     if len(bucket_list) > 1:
         replacement += ','
     body_variable = body_variable.replace('<FIRST_VARIABLE>', replacement)
 
     rest_lines = []
-    for bucket in bucket_list[1:]:
+    for bucket in bucket_list:
         rest_lines.append(rest_variable.replace('<BUCKET_NAME>', bucket))
                           
     body_variable = body_variable.replace('<REST_VARIABLE>', ','.join(rest_lines))
