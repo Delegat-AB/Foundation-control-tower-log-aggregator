@@ -1,5 +1,12 @@
 # Change Log
 
+## v1.4.0
+    * Added `.python-version` file for pyenv.
+    * Upgraded to Python 3.12.
+
+## v1.3.1
+    * Included the Control Tower bucket size on the dashboard.
+
 ## v1.3.0
     * Dashboard added.
 

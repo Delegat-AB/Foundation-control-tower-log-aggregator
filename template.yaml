@@ -18,7 +18,7 @@ Description: >
 
 Globals:
   Function:
-    Runtime: python3.11
+    Runtime: python3.12
     MemorySize: 256
     Handler: app.lambda_handler
     Timeout: 900
@@ -615,6 +615,7 @@ Resources:
               Resource: '*'
       Environment:
         Variables:
+          CONTROL_TOWER_BUCKET: !Ref ControlTowerBucket
           DASHBOARD_NAME: !Ref DashboardName
           BUCKET_PREFIXES: !Ref OtherBuckets
           REGION: !Sub "${AWS::Region}"
