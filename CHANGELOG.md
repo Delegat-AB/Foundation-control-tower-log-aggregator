@@ -1,5 +1,8 @@
 # Change Log
 
+## v1.4.1
+    * Added prefix data in debug printout.
+
 ## v1.4.0
     * Added `.python-version` file for pyenv.
     * Upgraded to Python 3.12.
