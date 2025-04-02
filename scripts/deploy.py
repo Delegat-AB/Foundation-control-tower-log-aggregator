@@ -912,7 +912,6 @@ def monitor_stackset_stacks_until_complete(stackset_name, account_id, region, ro
         return
 
     printc(LIGHT_BLUE, "Waiting for stack set's deployment of its stacks to complete...")
-    print()  # Add an empty line before starting
     
     # Track the number of instances in the previous update
     previous_instances_count = 0
