@@ -736,7 +736,7 @@ def monitor_stack_until_complete(stack_name, account_id, region, role, dry_run, 
     cf_client = get_client('cloudformation', account_id, region, role)
     
     # Define terminal states for CloudFormation stacks and stack sets
-    terminal_states = ["CREATE_COMPLETE", "ROLLBACK_COMPLETE", "UPDATE_COMPLETE", "UPDATE_ROLLBACK_COMPLETE", "DELETE_COMPLETE", "CURRENT", "ACTIVE"]
+    terminal_states = ["CREATE_COMPLETE", "ROLLBACK_COMPLETE", "UPDATE_COMPLETE", "UPDATE_ROLLBACK_COMPLETE", "DELETE_COMPLETE", "CURRENT", "ACTIVE", "SKIPPED_SUSPENDED_ACCOUNT"]
 
     # Get the current stack status
     stack = cf_client.describe_stacks(StackName=stack_name)
@@ -803,7 +803,7 @@ def monitor_stackset_until_complete(stackset_name, account_id, region, role, dry
     cf_client = get_client('cloudformation', account_id, region, role)
     
     # Define terminal states for CloudFormation StackSets
-    terminal_states = ["CREATE_COMPLETE", "ROLLBACK_COMPLETE", "UPDATE_COMPLETE", "UPDATE_ROLLBACK_COMPLETE", "DELETE_COMPLETE", "CURRENT", "ACTIVE"]
+    terminal_states = ["CREATE_COMPLETE", "ROLLBACK_COMPLETE", "UPDATE_COMPLETE", "UPDATE_ROLLBACK_COMPLETE", "DELETE_COMPLETE", "CURRENT", "ACTIVE", "SKIPPED_SUSPENDED_ACCOUNT"]
 
     # Get the current StackSet status
     stackset = cf_client.describe_stack_set(StackSetName=stackset_name)
@@ -871,7 +871,7 @@ def monitor_stackset_stacks_until_complete(stackset_name, account_id, region, ro
     cf_client = get_client('cloudformation', account_id, region, role)
     
     # Define terminal states for CloudFormation stacks
-    terminal_states = ["CREATE_COMPLETE", "ROLLBACK_COMPLETE", "UPDATE_COMPLETE", "UPDATE_ROLLBACK_COMPLETE", "DELETE_COMPLETE", "CURRENT", "FAILED", "OUTDATED"]
+    terminal_states = ["CREATE_COMPLETE", "ROLLBACK_COMPLETE", "UPDATE_COMPLETE", "UPDATE_ROLLBACK_COMPLETE", "DELETE_COMPLETE", "CURRENT", "FAILED", "OUTDATED", "SKIPPED_SUSPENDED_ACCOUNT"]
 
     # Get the status of all stacks deployed by the StackSet
     stack_instances = cf_client.list_stack_instances(StackSetName=stackset_name)
