@@ -1,5 +1,8 @@
 # Change Log
 
+## v1.5.1
+    * Corrected S3 client initialisation.
+
 ## v1.5.0
     * Performance optimization for CombineLogFilesFunction:
       * Increased memory allocation to 2048MB
