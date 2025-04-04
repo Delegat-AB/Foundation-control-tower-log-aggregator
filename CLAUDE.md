@@ -34,13 +34,22 @@
   1. Main logs (using exact file names via GetExactFilesFunction) - relatively fast
   2. Auxiliary logs (using file name filters via GetFilesFunction) - much slower than expected
 
+- Detailed analysis of auxiliary log processing workflow:
+  - The state machine executes "Process Other Logs" after "Process Main Log Types" (line 187 in combine_log_files.asl.yaml)
+  - GetFilesFunction retrieves all objects with minimal prefix filtering, then filters by date patterns
+  - DetermineOperationTypeFunction then checks every file size to determine operation type
+  - Either CopyLogFilesFunction or CombineLogFilesFunction is invoked based on operation type
+  - Each function operates on batches of files, with continuation markers for long-running operations
+
 - Performance bottlenecks identified:
   1. Sequential processing where parallel execution is possible
      - Main and auxiliary logs processing could be executed in parallel
      - Process Other Logs (auxiliary) only starts after Process Main Log Types completes
+     - These operations are independent and don't share resources that would cause contention
   
   2. Inefficient file filtering in auxiliary logs path
-     - GetFilesFunction lists all objects in the bucket with minimal prefix filtering
+     - GetFilesFunction lists all objects in the bucket with minimal prefix filtering (line 24 in get_files/app.py)
+     - Unlike GetExactFilesFunction which uses targeted prefixes, GetFilesFunction scans entire buckets
      - DetermineOperationTypeFunction makes separate HEAD requests for each file
      - all_files_large() makes sequential HEAD requests without batching/pagination:
        ```python
@@ -54,16 +63,23 @@
            return True
        ```
      - This is a major bottleneck as it makes a new HTTP request for each file
+     - While it does terminate early when finding a small file, it must make sequential requests
+     - Every HEAD request incurs network latency, adding up significantly with large file lists
   
-  3. S3 connection handling in some functions
-     - CombineLogFilesFunction uses connection pooling (max_pool_connections=50)
+  3. S3 connection handling inconsistencies
+     - CombineLogFilesFunction properly uses connection pooling (max_pool_connections=50) with retries
      - Other functions (GetFilesFunction, GetExactFilesFunction) don't use connection pooling
-     - No consistent retry strategy across functions
+     - No consistent retry strategy across all functions
+     - Connection pooling is critical for functions making many S3 operations, as it:
+       * Reduces TCP/TLS handshake overhead
+       * Allows for HTTP connection reuse
+       * Significantly improves throughput for Lambda functions making many S3 calls
   
-  4. Multipart upload operations in CombineLogFilesFunction
-     - Complex aggregation logic with multiple S3 operations per file
-     - Sequential processing of each file
-     - No parallel aggregation of independent file sets
+  4. Multipart upload operations limitations
+     - CombineLogFilesFunction uses S3 multipart uploads that require sequential processing by design
+     - S3 multipart upload restrictions prevent batch combination of files (all parts except last must be ≥5MB)
+     - The function is already well-optimized with connection pooling and continuation handling
+     - The state machine calls this function in parallel via Map states for different log sets
 
 - Algorithm differences between main and auxiliary logs:
   1. Main logs (fast path):
