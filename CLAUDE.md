@@ -4,7 +4,7 @@
 - Build project: `sam build --parallel`
 - Deploy to default region: `./deploy`
 - Deploy with dry run: `./deploy --dry-run`
-- Process historical logs: Use ProcessHistoricalMainLogsSM Step Function with appropriate JSON input
+- Process historical logs: Use ProcessHistoricalMainLogsSM Step Function with appropriate JSON input (note: this is only run during initial setup, not daily)
 
 ## Testing
 - Project is primarily infrastructure-as-code without traditional test patterns
@@ -20,6 +20,15 @@
 - AWS resources: Follow Control Tower naming conventions for all resources
 - S3 operations: Use connection pooling for high-throughput operations
 
+## AWS Lambda Behavior
+- Lambda functions are ephemeral and stateless - a new container may be initialized for each invocation
+- Code outside the Lambda handler runs on cold starts (when a new container is initialized)
+- Connection pooling benefits are within a single Lambda invocation, not between invocations
+- Connection pooling is still valuable in Lambda functions that make multiple S3 API calls:
+  - Eliminates connection establishment overhead (TCP handshakes, TLS negotiation)
+  - Reuses HTTP connections instead of creating new ones for each S3 operation
+  - Particularly important for functions making dozens or hundreds of S3 operations
+
 ## Performance Optimization TODO
 - Current architecture has two sequential phases that could run in parallel:
   1. Main logs (using exact file names via GetExactFilesFunction) - relatively fast
@@ -33,7 +42,18 @@
   2. Inefficient file filtering in auxiliary logs path
      - GetFilesFunction lists all objects in the bucket with minimal prefix filtering
      - DetermineOperationTypeFunction makes separate HEAD requests for each file
-     - all_files_large() makes sequential HEAD requests without batching/pagination
+     - all_files_large() makes sequential HEAD requests without batching/pagination:
+       ```python
+       def all_files_large(bucket_name, files):
+           for file in files:
+               # Get file size from S3
+               response = s3_client.head_object(Bucket=bucket_name, Key=file)
+               size = response['ContentLength']
+               if size < MIN_SIZE:
+                   return False
+           return True
+       ```
+     - This is a major bottleneck as it makes a new HTTP request for each file
   
   3. S3 connection handling in some functions
      - CombineLogFilesFunction uses connection pooling (max_pool_connections=50)
@@ -44,6 +64,17 @@
      - Complex aggregation logic with multiple S3 operations per file
      - Sequential processing of each file
      - No parallel aggregation of independent file sets
+
+- Algorithm differences between main and auxiliary logs:
+  1. Main logs (fast path):
+     - Uses GetExactFilesFunction that searches specific, known prefixes
+     - Only looks in known date patterns and account IDs
+     - No file size checking - combines all files regardless of size
+  
+  2. Auxiliary logs (slow path):
+     - GetFilesFunction does a full bucket scan with minimal filtering
+     - DetermineOperationTypeFunction checks all file sizes with sequential HEAD requests
+     - Checks if files are already large enough (> MIN_SIZE) to skip combination
 
 - Instrumentation options for performance analysis:
   1. CloudWatch logs with precise timestamps and metrics
@@ -86,7 +117,10 @@
      - Increase memory allocation where beneficial (benchmark to verify)
      - Optimize Python code (use generators, reduce memory usage)
      - Batch S3 operations where possible
-     - Replace sequential HEAD requests with batch operations
+     - Replace sequential HEAD requests with batch operations:
+       * Use S3 batch operations or parallel processing to check file sizes
+       * Sample a subset of files to determine operation type instead of checking all
+       * Consider early termination once a small file is found
   
   4. Smart file filtering
      - Improve prefix filtering to reduce the initial result set
