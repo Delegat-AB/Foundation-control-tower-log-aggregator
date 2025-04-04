@@ -2,12 +2,18 @@ from calendar import month
 import os
 import json
 import boto3
+from botocore.config import Config
 
 TMP_LOGS_BUCKET_NAME = os.environ['TMP_LOGS_BUCKET_NAME']
 DEST_LOGS_BUCKET_NAME = os.environ['DEST_LOGS_BUCKET_NAME']
 FINAL_AGGREGATION_PREFIX = os.environ['FINAL_AGGREGATION_PREFIX']
 
-s3_client = boto3.client('s3')
+s3_config = Config(
+    max_pool_connections=50,
+    retries={'max_attempts': 10}
+)
+
+s3_client = boto3.client('s3', config=s3_config)
 
 
 def lambda_handler(data, _context):

@@ -1,5 +1,8 @@
 # Change Log
 
+## v1.5.2
+    * Added connection pooling to most lambdas.
+
 ## v1.5.1
     * Corrected S3 client initialisation.
 

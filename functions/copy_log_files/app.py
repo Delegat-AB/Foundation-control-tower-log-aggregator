@@ -3,6 +3,7 @@ import os
 import json
 import time
 import logging
+from botocore.config import Config
 
 # Configure the logger
 logger = logging.getLogger()
@@ -13,7 +14,12 @@ TMP_LOGS_BUCKET_NAME = os.environ['TMP_LOGS_BUCKET_NAME']
 DEST_LOGS_BUCKET_NAME = os.environ['DEST_LOGS_BUCKET_NAME']
 
 
-s3_client = boto3.client('s3')
+s3_config = Config(
+    max_pool_connections=50,
+    retries={'max_attempts': 10}
+)
+
+s3_client = boto3.client('s3', config=s3_config)
 
 
 def lambda_handler(data, context):
